@@ -1,0 +1,36 @@
+# Use the Debian Stretch variant of 5.6 if possible, as it's slightly more stable
+FROM php:5.6-fpm
+
+# 1. Fix Repositories to Archive
+RUN printf "deb http://archive.debian.org/debian/ stretch main\ndeb http://archive.debian.org/debian-security stretch/updates main" > /etc/apt/sources.list
+
+# 2. Install dependencies (Simplified list to avoid 'Package Not Found' errors)
+RUN apt-get update -o Acquire::Check-Valid-Until=false || true \
+    && apt-get install -y --force-yes --no-install-recommends \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    libxml2-dev \
+    libicu-dev \
+    curl \
+    zip \
+    unzip \
+    git \
+    && apt-get clean
+
+# 3. Configure and Install Extensions
+RUN docker-php-ext-configure gd --with-freetype-dir=/usr/include/ --with-jpeg-dir=/usr/include/ \
+    && docker-php-ext-install \
+        pdo_mysql \
+        mysqli \
+        mbstring \
+        exif \
+        gd \
+        intl
+
+WORKDIR /var/www/html/opencart
+COPY ./src /var/www/html/opencart
+RUN chown -R www-data:www-data /var/www/html/opencart
+
+EXPOSE 9000
+CMD ["php-fpm"]

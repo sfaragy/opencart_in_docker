@@ -1,0 +1,49 @@
+services:
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    depends_on:
+      - php
+    volumes:
+      - ./src:/var/www/html/opencart
+      - ./config/default.conf:/etc/nginx/conf.d/default.conf
+    restart: always
+
+  php:
+    build: .
+    volumes:
+      - ./src:/var/www/html/opencart
+      - ./config/php.ini:/usr/local/etc/php/conf.d/uploads.ini
+    expose:
+      - "9000"
+    restart: always
+
+db:
+    image: mysql:5.7
+    command: --sql-mode="" # Makes it more compatible with legacy code
+    environment:
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_DATABASE: opencart
+      MYSQL_USER: opencart
+      MYSQL_PASSWORD: secret
+    volumes:
+      - ./db_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: secret
+      UPLOAD_LIMIT: 1024M
+    depends_on:
+      - db
+    restart: always
+
+volumes:
+  db_data:
